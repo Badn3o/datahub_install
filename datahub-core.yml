@@ -2,9 +2,17 @@ services:
   datahub-setup:
     image: acryldata/datahub-upgrade:v0.12.1
     container_name: datahub-setup
-    networks: [datahub_network]                                                                                                                                                                                      command: ["-u", "SystemUpdate"]                                                                                                                                                                                  environment:                                                                                                                                                                                                       # --- LA LLAVE MAESTRA (En una sola línea para evitar errores de parsing) ---                                                                                                                                    JAVA_OPTS: "-Ddatasource.gmsEbeanServiceConfig.url=jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true -Ddatasource.gmsEbeanServiceConfig.username=datahub -Ddatasource.gmsEbeanServiceConfig.password=datahub_password"
+    networks:
+      - datahub_network
+    command: ["-u", "SystemUpdate"]
+    environment:
+      # Propiedades Java (como tú querías)
+      JAVA_OPTS: >-
+        -Ddatasource.gmsEbeanServiceConfig.url=jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true
+        -Ddatasource.gmsEbeanServiceConfig.username=datahub
+        -Ddatasource.gmsEbeanServiceConfig.password=datahub_password
 
-      # --- RESPALDO DE VARIABLES ---
+      # Respaldo / compatibilidad
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true"
       SPRING_DATASOURCE_USERNAME: "datahub"
       SPRING_DATASOURCE_PASSWORD: "datahub_password"
@@ -16,17 +24,18 @@ services:
   datahub-gms:
     image: linkedin/datahub-gms:v0.12.1
     container_name: datahub-gms
-    networks: [datahub_network]
-    # Usamos exactamente lo que te funcionó a mano
-    command: /bin/sh /datahub/datahub-gms/scripts/start.sh
+    networks:
+      - datahub_network
+    command: ["/bin/sh", "/datahub/datahub-gms/scripts/start.sh"]
     environment:
-      # Forzamos los saltos para evitar los errores de operando que viste
-      SKIP_ELASTICSEARCH_CHECK: "true"
-      SKIP_MYSQL_CHECK: "true"
-      SKIP_NEO4J_CHECK: "true"
-      SKIP_KAFKA_CHECK: "true"
+      # Yo NO desactivaría los checks mientras estés validando conectividad:
+      # si algo falla, prefieres que lo diga claro.
+      SKIP_ELASTICSEARCH_CHECK: "false"
+      SKIP_MYSQL_CHECK: "false"
+      SKIP_NEO4J_CHECK: "false"
+      SKIP_KAFKA_CHECK: "false"
 
-      # Variables de Infraestructura
+      # Infra
       MYSQL_HOST: "mysql"
       MYSQL_PORT: "3306"
       ELASTICSEARCH_HOST: "elasticsearch"
@@ -35,7 +44,7 @@ services:
       NEO4J_PORT: "7474"
       KAFKA_BOOTSTRAP_SERVER: "kafka:9092"
 
-      # Configuración App
+      # App
       DATAHUB_GMS_PORT: "8080"
       MYSQL_DATABASE: "datahub"
       MYSQL_USERNAME: "datahub"
@@ -48,8 +57,14 @@ services:
       timeout: 10s
       retries: 15
     depends_on:
-      mysql: { condition: service_healthy }
-      elasticsearch: { condition: service_healthy }
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   datahub-frontend-react:
     image: linkedin/datahub-frontend-react:v0.12.1
@@ -62,16 +77,12 @@ services:
       datahub-gms:
         condition: service_started
     environment:
-      # CONFIGURACIÓN DE CONEXIÓN EXPLÍCITA
       DATAHUB_GMS_HOST: "datahub-gms"
       DATAHUB_GMS_PORT: "8080"
-      DATAHUB_GMS_PROTOCOL: "http" # Forzamos el protocolo
+      DATAHUB_GMS_PROTOCOL: "http"
 
-      # SEGURIDAD (Obligatorios para v0.12.1)
       DATAHUB_SECRET: "una_cadena_muy_larga_y_secreta_de_32_caracteres"
       KAFKA_BOOTSTRAP_SERVER: "kafka:9092"
-
-      # LOGGING (Para ver por qué da el 503)
       METADATA_SERVICE_AUTH_ENABLED: "false"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9002/healthcheck || exit 1"]
