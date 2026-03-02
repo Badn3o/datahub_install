@@ -1,25 +1,20 @@
 services:
-  datahub-setup:
-    image: acryldata/datahub-upgrade:v0.12.1
-    container_name: datahub-setup
-    networks:
-      - datahub_network
-    command: ["-u", "SystemUpdate"]
-    environment:
-      # Propiedades Java (como tú querías)
-      JAVA_OPTS: >-
-        -Ddatasource.gmsEbeanServiceConfig.url=jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true
-        -Ddatasource.gmsEbeanServiceConfig.username=datahub
-        -Ddatasource.gmsEbeanServiceConfig.password=datahub_password
-
-      # Respaldo / compatibilidad
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true"
-      SPRING_DATASOURCE_USERNAME: "datahub"
-      SPRING_DATASOURCE_PASSWORD: "datahub_password"
-      METADATA_SERVICE_DB_HOSTNAME: "mysql"
-    depends_on:
-      mysql:
-        condition: service_healthy
+datahub-setup:
+  image: acryldata/datahub-upgrade:v0.12.1
+  container_name: datahub-setup
+  networks:
+    - datahub_network
+  command: ["-u", "SystemUpdate"]
+  environment:
+    EBEAN_DATASOURCE_HOST: "mysql:3306"
+    EBEAN_DATASOURCE_USERNAME: "datahub"
+    EBEAN_DATASOURCE_PASSWORD: "datahub_password"
+    EBEAN_DATASOURCE_URL: "jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true&useUnicode=yes&characterEncoding=UTF-8"
+    # (Opcional) si quieres ser explícito con el driver moderno:
+    # EBEAN_DATASOURCE_DRIVER: "com.mysql.cj.jdbc.Driver"
+  depends_on:
+    mysql:
+      condition: service_healthy
 
   datahub-gms:
     image: linkedin/datahub-gms:v0.12.1
@@ -93,3 +88,4 @@ services:
 networks:
   datahub_network:
     external: true
+
