@@ -1,4 +1,20 @@
 services:
+datahub-mysql-setup:
+  image: acryldata/datahub-mysql-setup:v0.12.1
+  container_name: datahub-mysql-setup
+  networks:
+    - datahub_network
+  environment:
+    MYSQL_HOST: "mysql"
+    MYSQL_PORT: "3306"
+    MYSQL_USERNAME: "root"
+    MYSQL_PASSWORD: "root_password"
+    MYSQL_DATABASE: "datahub"
+    MYSQL_USER: "datahub"
+    MYSQL_PASS: "datahub_password"
+  depends_on:
+    mysql:
+      condition: service_healthy
 datahub-setup:
   image: acryldata/datahub-upgrade:v0.12.1
   container_name: datahub-setup
@@ -95,6 +111,7 @@ datahub-setup:
 networks:
   datahub_network:
     external: true
+
 
 
 
