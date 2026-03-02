@@ -6,7 +6,6 @@ services:
       datahub_network:
         aliases:
           - mysql
-          - localhost
     environment:
       MYSQL_DATABASE: datahub
       MYSQL_USER: datahub
@@ -85,3 +84,4 @@ services:
 networks:
   datahub_network:
     external: true
+
