@@ -1,0 +1,11 @@
+name: datahub-project
+
+include:
+  - path: infra.yml
+  - path: datahub-core.yml
+    #- path: elementary.yml
+
+networks:
+  datahub_network:
+    name: datahub_network
+    driver: bridge
