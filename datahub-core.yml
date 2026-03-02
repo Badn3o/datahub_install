@@ -12,6 +12,7 @@ datahub-setup:
     EBEAN_DATASOURCE_URL: "jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true&useUnicode=yes&characterEncoding=UTF-8"
     # (Opcional) si quieres ser explícito con el driver moderno:
     # EBEAN_DATASOURCE_DRIVER: "com.mysql.cj.jdbc.Driver"
+    ENTITY_REGISTRY_CONFIG_PATH: "/datahub/datahub-gms/resources/entity-registry.yml"   
   depends_on:
     mysql:
       condition: service_healthy
@@ -46,6 +47,7 @@ datahub-setup:
       MYSQL_PASSWORD: "datahub_password"
       GRAPH_SERVICE_IMPL: "neo4j"
       NEO4J_URI: "bolt://neo4j:7687"
+      ENTITY_REGISTRY_CONFIG_PATH: "/datahub/datahub-gms/resources/entity-registry.yml" 
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -88,4 +90,5 @@ datahub-setup:
 networks:
   datahub_network:
     external: true
+
 
