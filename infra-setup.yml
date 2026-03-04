@@ -1,0 +1,95 @@
+services:
+  datahub-elasticsearch-setup:
+    image: acryldata/datahub-elasticsearch-setup:head
+    container_name: datahub-elasticsearch-setup
+    networks:
+      - datahub_network
+    environment:
+      ELASTICSEARCH_HOST: "elasticsearch"
+      ELASTICSEARCH_PORT: "9200"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  datahub-kafka-setup:
+    image: acryldata/datahub-kafka-setup:head
+    container_name: datahub-kafka-setup
+    networks:
+      - datahub_network
+    environment:
+      KAFKA_BOOTSTRAP_SERVER: "kafka:9092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  datahub-mysql-setup:
+    image: acryldata/datahub-mysql-setup:head
+    container_name: datahub-mysql-setup
+    networks:
+      - datahub_network
+    environment:
+      MYSQL_HOST: "mysql"
+      MYSQL_PORT: "3306"
+      MYSQL_USERNAME: "root"
+      MYSQL_PASSWORD: "root_password"
+      MYSQL_DATABASE: "datahub"
+      MYSQL_USER: "datahub"
+      MYSQL_PASS: "datahub_password"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  datahub-neo4j-setup:
+    image: linkedin/datahub-neo4j-setup:v0.12.1
+    hostname: datahub-neo4j-setup
+    depends_on:
+      - neo4j
+    environment:
+      GRAPH_SERVICE_IMPL: "neo4j"     
+      # start.sh añade http:// si no hay esquema, así que aquí SIN esquema y CON puerto:
+            NEO4J_HOST: "neo4j:7474"
+      NEO4J_URI: "bolt://neo4j:7687"
+      NEO4J_USERNAME: "neo4j"
+      NEO4J_PASSWORD: "datahub"
+    restart: on-failure
+
+  datahub-setup:
+    image: acryldata/datahub-upgrade:v0.12.1
+    container_name: datahub-setup
+    networks:
+      - datahub_network
+    command: ["-u", "SystemUpdate"]
+    environment:
+      # MySQL (Ebean)
+      EBEAN_DATASOURCE_HOST: "mysql:3306"
+      EBEAN_DATASOURCE_USERNAME: "datahub"
+      EBEAN_DATASOURCE_PASSWORD: "datahub_password"
+      EBEAN_DATASOURCE_URL: "jdbc:mysql://mysql:3306/datahub?useSSL=false&allowPublicKeyRetrieval=true"
+
+      # Elasticsearch (NO dejarlo vacío)
+      ELASTICSEARCH_HOST: "elasticsearch"
+      ELASTICSEARCH_PORT: "9200"
+
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVER: "kafka:9092"
+
+      # Neo4j (en upgrade suele aceptarse host:port o http://host:port; aquí lo dejo explícito)
+      NEO4J_HOST: "http://neo4j:7474"
+
+      # Registry
+      ENTITY_REGISTRY_CONFIG_PATH: "/datahub/datahub-gms/resources/entity-registry.yml"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+
+networks:
+  datahub_network:
+    external: true
+      NEO4J_HOST: "neo4j:7474"
